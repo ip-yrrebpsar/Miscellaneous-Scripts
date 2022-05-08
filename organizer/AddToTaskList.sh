@@ -1,5 +1,5 @@
 #!/bin/bash
-set -x 
+#set -x 
 set -e 
 
 scriptDirectory="/home/$USER/Documents/miscScripts/organizer"
@@ -60,12 +60,19 @@ done
 #shift to isolate task with $@
 shift $((OPTIND-1))
 #echo "$@"
+
+
+
 if [ -z $time ] ; then time="00:00" ; fi 
 if [ -z $priority ] ; then priority=2 ; fi 
 if [ -z $date ] ; then 
-date=`egrep "^3:" ./dateMasks | cut -d ":" -f 2` #user did not set date, use datemask
+date=`egrep "^2:" ./dateMasks | cut -d ":" -f 2` #user did not set date, use datemask
+else 
+   today=`date '+%m/%d/%Y'`
+   if [ "$date" == "$today" ] ; then 
+      time="23:59" 
+   fi
 fi
-
 log=1 # TODO REMOVE ME 
 #jobId=`echo "cd $scriptDirectory ; ./ProcessTask.sh $time $date $priority \"$@\"" | at "now" |grep job  | awk '{ print $2 }'`
 jobId=`echo "cd $scriptDirectory ; ./ProcessTask.sh $time $date $priority \"$@\"" | at "$time $date" |grep job  | awk '{ print $2 }'`
