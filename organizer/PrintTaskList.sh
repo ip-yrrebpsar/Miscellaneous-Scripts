@@ -16,8 +16,19 @@ printHeader(){
        echo $header
     fi
 }
+ 
 
-while IFS= read -r line; do
+atJobs=`atq | sort -k 6n -k 3M -k 4n -k 5 -k 7 -k 1`
+sortByPrio(){
+#https://stackoverflow.com/questions/7442417/how-to-sort-an-array-in-bash
+IFS=$'\n' sorted=($(sort <<<"${taskList[*]}"))
+unset IFS
+for task in "${sorted[@]}"  ; do 
+ echo "     $task"
+done
+}
+taskList=()
+while read -u 8 -r line; do
 	id=`echo $line |  awk '{ print $1; } '`
 	processCommand=`at -c $id | tail -n2 | head -n1 | cut -f 2- -d ';' | tr -d \" ` #eg ./ProcessTask.sh 23:59 05/08/2022 2 task4
  prio=`echo $processCommand | awk '{print $4}'`
@@ -26,12 +37,16 @@ while IFS= read -r line; do
 
  dateFormat=`echo $line | awk '{print $3 " " $4 " " $6 }' ` # #May 8 2022
 
-			if [ "$dateFormat" != "$lastDate" ] ; then
-				echo "" 
-    printHeader
-    lastDate="$dateFormat"
-			fi
-			echo  "    $taskFormat"
+	if [ "$dateFormat" != "$lastDate" ] ; then
+      sortByPrio
+		echo "" 
+      printHeader
+      lastDate="$dateFormat"
+		taskList=()
+	fi
+   taskList+=("$taskFormat")
+	#		echo  "    $taskFormat"
 
               #sorts atq by time
-done < <(atq | sort -k 6n -k 3M -k 4n -k 5 -k 7 -k 1 )
+done 8< <(atq | sort -k 6n -k 3M -k 4n -k 5 -k 7 -k 1 )
+sortByPrio
