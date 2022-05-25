@@ -3,7 +3,7 @@
 #set -e
 today=$(date '+%m/%d/%Y')
 
-atJobs=$(atq | sort -k 6n -k 3M -k 4n -k 5 -k 7 -k 1)
+atJobs=`atq | sort -k 6n -k 3M -k 4n -k 5 -k 7 -k 1 | tac`
 taskList=()
 
 printHeader() {
@@ -25,9 +25,9 @@ sortByPrio() {
    #https://stackoverflow.com/questions/7442417/how-to-sort-an-array-in-bash
    IFS=$'\n' sorted=($(sort <<<"${taskList[*]}"))
    unset IFS
-   for task in "${sorted[@]}"; do
-      echo "     $task"
-   done
+   sortedArr=`for task in "${sorted[@]}"; do echo "     $task"; done`
+   echo "$sortedArr" | tac
+
 }
 
 #loop through atq jobs 
@@ -36,7 +36,7 @@ while read -u 8 -r line; do
    processCommand=$(at -c $id | tail -n2 | head -n1 | cut -f 2- -d ';' | tr -d \") #eg ./ProcessTask.sh 23:59 05/08/2022 2 task4
    prio=$(echo $processCommand | awk '{print $4}')
    task=$(echo $processCommand | cut -d ' ' -f 5-)
-   taskFormat="p$prio id:$id | $task "
+   taskFormat="p$prio #$id | $task "
    dateFormat=$(echo $line | awk '{print $3 " " $4 " " $6 }') #May 8 2022
 
    if [ "$dateFormat" != "$lastDate" ]; then
