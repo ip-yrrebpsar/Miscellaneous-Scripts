@@ -22,6 +22,7 @@ usage() {
 	echo "-p <1,2,3> | priority default 2"
 	#echo "-t <12:00> | time to prompt about task, no prompt by default"
 	echo "-v | print version and exit"
+ echo "-q | Don't log the task"
 	exit 1
 }
 
