@@ -22,7 +22,7 @@ usage() {
 	echo "-p <1,2,3> | priority default 2"
 	#echo "-t <12:00> | time to prompt about task, no prompt by default"
 	echo "-v | print version and exit"
- echo "-q | Don't log the task"
+	echo "-q | Don't log the task"
 	exit 1
 }
 
@@ -37,34 +37,34 @@ if [ $# -eq 0 ]; then usage; fi
 while getopts "nvqrdD:p:t:" o; do
 
 	case "${o}" in
-	t)
-		t=${OPTARG}
-		parseTime $t
-		;;
-	p)
-		priority=${OPTARG}
-		((priority >= 1 && priority <= 3)) || usage
-		;;
-	q)
-		log=1
-		;;
-	D)
-		date=${OPTARG}
-		;;
-	d)
-		date=$(zenity --calendar)
-		;;
-	r)
-		echo unsupported
-		exit 1
-		;;
-	l)
-		usage
-		;;
-	v)
-		echo $version
-		exit
-		;;
+		t)
+			t=${OPTARG}
+			parseTime $t
+			;;
+		p)
+			priority=${OPTARG}
+			((priority >= 1 && priority <= 3)) || usage
+			;;
+		q)
+			log=1
+			;;
+		D)
+			date=${OPTARG}
+			;;
+		d)
+			date=$(zenity --calendar)
+			;;
+		r)
+			echo unsupported
+			exit 1
+			;;
+		l)
+			usage
+			;;
+		v)
+			echo $version
+			exit
+			;;
 	esac
 done
 
