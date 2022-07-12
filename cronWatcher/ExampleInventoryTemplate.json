@@ -1,0 +1,23 @@
+{
+	"pcLocal": {
+		"type": "local",
+		"cronUser": "user1",
+		"md5": ""
+	},
+	"server1": {
+		"type": "remote",
+		"identityUser": "sshUser1",
+		"cronUser": "sshUser1",
+		"endpoint": "10.2.1.123",
+		"identityFile": "/home/user/.ssh/id_rsa",
+		"md5": ""
+	},
+	"server2": {
+		"type": "remote",
+		"identityUser": "root",
+		"cronUser": "sshUser2",
+		"endpoint": "10.2.1.124",
+		"identityFile": "/home/user/.ssh/id_rsa",
+		"md5": ""
+	}
+}

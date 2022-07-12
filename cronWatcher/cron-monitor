@@ -1,0 +1,73 @@
+#!/bin/bash
+#About this script
+#Objective: to continuously validate crontabs across systems or alert for any that have been altered
+#Behavior: Will read, but never modify or remove any live crontabs
+#	   When run from cron will not alert for any unreachable servers or unretrievable crontabs
+#          When run manually will inform of unreachable servers or unretrievable crontabs
+#Designed to be run from a cron job ( see warning about notify-send) or run manually for verbose output/troubleshooting.
+
+#TODO inventory validation
+
+scriptDirectory="`dirname $(realpath $0)`"
+
+if ! [ -f "$scriptDirectory/inventory.json" ] ; then echo "$scriptDirectory/inventory.json not found, see ExampleInventoryTemplate.json" ; exit 1 ;fi 
+
+compare(){
+	discoveredMd5=`echo "$discoveredCron" | grep -ve "^ *#" | tr -d '\n'|  md5sum | awk '{print $1}' `
+	if [ "$discoveredMd5" != "$expectedMd5" ] ; then 
+		#Warning: notify-send may require OS specific environmental variable to reach display from cron
+		notify-send "$endpointAlias failed cron check"
+		if [ -f "$scriptDirectory/cronCache/$endpointAlias" ] ; then
+			diff -u "./cronCache/$endpointAlias"   <(echo "$discoveredCron")
+		else
+			echo "Unable to diff $endpointAlias cronCache file not found, try updateCronCache.sh"
+		fi
+	else
+		echo validated "$endpointAlias"
+	fi
+}
+
+checkLocalMd5(){
+	discoveredCron=`crontab -u $cronUser -l` 
+	if [ $? -ne 0 ] ; then
+		echo "failed to retreieve crontab for $cronUser, for endpoint $endpointAlias"
+	else
+		compare
+	fi
+}
+
+checkRemoteMd5(){
+	identityUser=`echo $inventory  | jq .$endpointAlias.identityUser --raw-output` 
+	endpoint=`echo $inventory  | jq .$endpointAlias.endpoint --raw-output` 
+	identity=`echo $inventory  | jq .$endpointAlias.identityFile --raw-output` 
+
+	if ! [ -f "$identity" ] ; then
+		echo "failed to find identityFile $identity for $endpointAlias"
+	else
+		discoveredCron=`ssh -i "$identity" "$identityUser@$endpoint" "crontab -u $cronUser -l"`
+		if [ $? -ne 0 ] ; then 
+			echo "failed to retreieve crontab for $cronUser, for endpoint $endpointAlias"
+		else
+			compare
+		fi
+	fi
+}
+
+inventory=`cat "$scriptDirectory/inventory.json"`
+endpoints=`echo $inventory | jq 'keys'  `
+for endpointAlias in `echo $endpoints | jq -c .[] --raw-output ` ; do 
+	hostType=`echo $inventory  | jq .$endpointAlias.type --raw-output`
+	cronUser=`echo $inventory  | jq .$endpointAlias.cronUser --raw-output` 
+	expectedMd5=`echo $inventory  | jq .$endpointAlias.md5 --raw-output` 
+
+	if [ "$expectedMd5" == "null" ] ; then 
+		echo "md5 for $endpointAlias not found, try updateCronCache.sh"
+		continue
+	fi
+
+	if [ "$hostType" == "local" ] ; then 
+		checkLocalMd5
+	elif [ "$hostType" == "remote" ] ; then 
+		checkRemoteMd5
+	fi
+done
